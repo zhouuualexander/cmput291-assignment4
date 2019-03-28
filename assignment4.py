@@ -8,6 +8,7 @@ def main():
     connection=sqlite3.connect("a4-sampled.db")
     valid = True
     Q2_count = 0
+    Q4_count = 0
     while valid:
         print("1: Q1")
         print("2: Q2")
@@ -24,7 +25,8 @@ def main():
         elif task == '3':
             task3(connection)
         elif task == '4':
-            task4(connection)
+            Q4_count = Q4_count +1
+            task4(connection,Q4_count)
         elif task == 'E':
             valid = False
         else:
@@ -56,7 +58,7 @@ def task2(connection,Q2_count):
     for item in range(number):
         mostpopul.append(most.iloc[item,0])
     #sql for least populous
-    least = pd.read_sql_query("SELECT p.Neighbourhood_Number, p.Neighbourhood_name,c.Latitude,c.Longitude FROM population p,coordinates c WHERE p.Neighbourhood_name = c.Neighbourhood_name ORDER BY p.Neighbourhood_Number ASC limit '%d' ;" %(number), connection)
+    least = pd.read_sql_query("SELECT p.Neighbourhood_Number, p.Neighbourhood_Name,c.Latitude,c.Longitude FROM population p,coordinates c WHERE p.Neighbourhood_Name = c.Neighbourhood_Name ORDER BY p.Neighbourhood_Number ASC limit '%d' ;" %(number), connection)
     leastname = []
     for item in range(number):
         leastname.append(least.iloc[item,1])
@@ -94,10 +96,40 @@ def task2(connection,Q2_count):
         m.save("Q2-" +str(Q2_count) + ".html") 
 def task3(connection):
     pass
-def task4(connection):
-    pass
-
+def task4(connection,Q4_count):
+    lower_year = int(input("Enter start year (YYYY):"))
+    upper_year = int(input("Enter end year (YYYY):"))
+    neigh_num = int(input("Enter number of neighborhoods:"))
+    crime = pd.read_sql_query("SELECT  p.Neighbourhood_Name,c.Latitude,c.Longitude,r.Crime_Type,(SUM(r.Incidents_Count)/CAST(p.Neighbourhood_Number AS float))as ratio\
+    FROM population p,coordinates c ,crime_incidents r WHERE p.Neighbourhood_Name = c.Neighbourhood_Name AND p.Neighbourhood_Name = r.Neighbourhood_Name\
+    AND r.year>= '%d' AND r.year<='%d' GROUP BY r.Neighbourhood_Name ORDER BY ratio DESC limit '%d';" %((lower_year),(upper_year),(neigh_num)), connection)
+    name = []
+    for item in range(neigh_num):
+        name.append(crime.iloc[item,0])
+    location = []
+    for item in range(neigh_num):
+        coord = []
+        for num in range(1,3):
+            coord.append(crime.iloc[item,num])
+        location.append(coord)
+    ratio = []
+    for item in range(neigh_num):
+        ratio.append(crime.iloc[item,4])    
+    m = folium.Map(location=[53.5444, -113.323], zoom_start=12)
+    for i in range(neigh_num):
+        folium.Circle(
+        location=location[i], # location
+        popup= name[i]+ " <br> " + str(ratio[i]), # popup text
+        radius= 100, # size of radius in meter
+        color= 'crimson', # color of the radius
+        fill= True, # whether to fill the map
+        fill_color= 'crimson' # color to fill with
+        ).add_to(m)   
+    m.save("Q4-" +str(Q4_count) + ".html") 
+    print(ratio)
+    print(name)
+    print(location)
+    print(crime)
 main()
-
 
 
