@@ -126,10 +126,7 @@ def task4(connection,Q4_count):
         fill_color= 'crimson' # color to fill with
         ).add_to(m)   
     m.save("Q4-" +str(Q4_count) + ".html") 
-    print(ratio)
-    print(name)
-    print(location)
-    print(crime)
+
 main()
 
 
