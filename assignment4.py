@@ -7,7 +7,9 @@ import numpy as np
 def main():
     connection=sqlite3.connect("a4-sampled.db")
     valid = True
+    Q1_count = 0
     Q2_count = 0
+    Q3_count = 0
     Q4_count = 0
     while valid:
         print("1: Q1")
@@ -15,15 +17,16 @@ def main():
         print("3: Q3")
         print("4: Q4")
         print("E: Exit")
-        
         task = input("Enter your choice: ")
         if task == '1':
-            task1(connection)
+            Q1_count = Q1_count+1
+            task1(connection,Q1_count)
         elif task == '2':
             Q2_count = Q2_count+1
             task2(connection,Q2_count)
         elif task == '3':
-            task3(connection)
+            Q3_count = Q3_count+1
+            task3(connection,Q3_count)
         elif task == '4':
             Q4_count = Q4_count +1
             task4(connection,Q4_count)
@@ -32,15 +35,7 @@ def main():
         else:
             pass
 def task1(connection):
-    paper = pd.read_sql_query("select * from papers;",connection)
-    count = len(paper.index)
-    browsing = True
-    paper_id = int(respond)-1
-    print("You selected paper " + respond + " which is " + paper["title"][paper_id])
-    print("The email of all reviewers that have reviewed the paper is below")
-    sql = "SELECT r.reviewer FROM papers p, reviews r WHERE p.Id = r.paper AND p.Id = '%s';" % (respond)
-    reviewer = pd.read_sql_query(sql,connection)
-    print(reviewer)
+    pass
 def task2(connection,Q2_count):
     number = int(input("Enter number of locations:"))
     #sql for most populous
