@@ -95,9 +95,13 @@ def task4(connection,Q4_count):
     lower_year = int(input("Enter start year (YYYY):"))
     upper_year = int(input("Enter end year (YYYY):"))
     neigh_num = int(input("Enter number of neighborhoods:"))
-    crime = pd.read_sql_query("SELECT  p.Neighbourhood_Name,c.Latitude,c.Longitude,r.Crime_Type,(SUM(r.Incidents_Count)/CAST(p.Neighbourhood_Number AS float))as ratio\
+    crime = pd.read_sql_query("select Neighbourhood_Name,Latitude,Longitude,Crime_Type,ratio,SUM(Incidents_Count) from (SELECT r.Neighbourhood_Name,c.Latitude,c.Longitude,r.Crime_Type,(SUM(r.Incidents_Count)/CAST(p.Neighbourhood_Number AS float))as ratio,r.Incidents_Count\
     FROM population p,coordinates c ,crime_incidents r WHERE p.Neighbourhood_Name = c.Neighbourhood_Name AND p.Neighbourhood_Name = r.Neighbourhood_Name\
-    AND r.year>= '%d' AND r.year<='%d' GROUP BY r.Neighbourhood_Name ORDER BY ratio DESC limit '%d';" %((lower_year),(upper_year),(neigh_num)), connection)
+    AND r.year>= '%d' AND r.year<='%d' GROUP BY r.Neighbourhood_Name ORDER BY ratio DESC limit '%d') group by Neighbourhood_Name ORDER BY ratio DESC;" %((lower_year),(upper_year),(neigh_num)), connection)
+    #print(crime)
+    neigh_name = crime['Neighbourhood_Name']
+    neigh_name.to_sql("Names",connection,if_exists='replace')
+    crimetype = pd.read_sql_query("SELECT temp.Neighbourhood_Name,temp.Crime_Type,MAX(temp.summer) FROM (SELECT r.Neighbourhood_Name,r.Crime_Type,SUM(r.Incidents_Count) as summer FROM Names n ,crime_incidents r WHERE r.Neighbourhood_Name = n.Neighbourhood_Name and r.year>= '%d' AND r.year<='%d'Group by r.Neighbourhood_Name,r.Crime_Type)temp  Group by temp.Neighbourhood_Name ;" %((lower_year),(upper_year)) , connection) 
     name = []
     for item in range(neigh_num):
         name.append(crime.iloc[item,0])
@@ -111,17 +115,26 @@ def task4(connection,Q4_count):
     for item in range(neigh_num):
         ratio.append(crime.iloc[item,4])    
     m = folium.Map(location=[53.5444, -113.323], zoom_start=12)
+    
+    print(name)
+    crime_type = []
+    for item in name:
+        for i in range(neigh_num):
+            if crimetype.iloc[i,0] == item:
+                crime_type.append(crimetype.iloc[i,1])
+    print(crime_type)
     for i in range(neigh_num):
         folium.Circle(
         location=location[i], # location
-        popup= name[i]+ " <br> " + str(ratio[i]), # popup text
+        popup= name[i]+ " <br> " + str(ratio[i]) + " <br> " + crime_type[i], # popup text
         radius= 100, # size of radius in meter
         color= 'crimson', # color of the radius
         fill= True, # whether to fill the map
         fill_color= 'crimson' # color to fill with
         ).add_to(m)   
-    m.save("Q4-" +str(Q4_count) + ".html") 
-
+    m.save("Q4-" +str(Q4_count) + ".html")     
 main()
+
+
 
 
