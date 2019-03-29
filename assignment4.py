@@ -39,7 +39,7 @@ def task1(connection):
 def task2(connection,Q2_count):
     number = int(input("Enter number of locations:"))
     #sql for most populous
-    most = pd.read_sql_query("SELECT p.Neighbourhood_Number, p.Neighbourhood_name,c.Latitude,c.Longitude FROM population p,coordinates c WHERE p.Neighbourhood_name = c.Neighbourhood_name ORDER BY p.Neighbourhood_Number DESC limit '%d' ;" %(number), connection)
+    most = pd.read_sql_query("SELECT p.CANADIAN_CITIZEN+p.NON_CANADIAN_CITIZEN+p.NO_RESPONSE, p.Neighbourhood_name,c.Latitude,c.Longitude FROM population p,coordinates c WHERE p.Neighbourhood_name = c.Neighbourhood_name ORDER BY p.Neighbourhood_Number DESC limit '%d' ;" %(number), connection)
     mostname = []
     for item in range(number):
         mostname.append(most.iloc[item,1])
@@ -53,7 +53,7 @@ def task2(connection,Q2_count):
     for item in range(number):
         mostpopul.append(most.iloc[item,0])
     #sql for least populous
-    least = pd.read_sql_query("SELECT p.Neighbourhood_Number, p.Neighbourhood_Name,c.Latitude,c.Longitude FROM population p,coordinates c WHERE p.Neighbourhood_Name = c.Neighbourhood_Name ORDER BY p.Neighbourhood_Number ASC limit '%d' ;" %(number), connection)
+    least = pd.read_sql_query("SELECT p.CANADIAN_CITIZEN+p.NON_CANADIAN_CITIZEN+p.NO_RESPONSE, p.Neighbourhood_Name,c.Latitude,c.Longitude FROM population p,coordinates c WHERE p.Neighbourhood_Name = c.Neighbourhood_Name ORDER BY p.Neighbourhood_Number ASC limit '%d' ;" %(number), connection)
     leastname = []
     for item in range(number):
         leastname.append(least.iloc[item,1])
@@ -89,13 +89,14 @@ def task2(connection,Q2_count):
         fill_color= 'crimson' # color to fill with
         ).add_to(m) 
         m.save("Q2-" +str(Q2_count) + ".html") 
+        
 def task3(connection):
     pass
 def task4(connection,Q4_count):
     lower_year = int(input("Enter start year (YYYY):"))
     upper_year = int(input("Enter end year (YYYY):"))
     neigh_num = int(input("Enter number of neighborhoods:"))
-    crime = pd.read_sql_query("select Neighbourhood_Name,Latitude,Longitude,Crime_Type,ratio,SUM(Incidents_Count) from (SELECT r.Neighbourhood_Name,c.Latitude,c.Longitude,r.Crime_Type,(SUM(r.Incidents_Count)/CAST(p.Neighbourhood_Number AS float))as ratio,r.Incidents_Count\
+    crime = pd.read_sql_query("select Neighbourhood_Name,Latitude,Longitude,Crime_Type,ratio,SUM(Incidents_Count) from (SELECT r.Neighbourhood_Name,c.Latitude,c.Longitude,r.Crime_Type,(SUM(r.Incidents_Count)/CAST(p.CANADIAN_CITIZEN+p.NON_CANADIAN_CITIZEN+p.NO_RESPONSE AS float))as ratio,r.Incidents_Count\
     FROM population p,coordinates c ,crime_incidents r WHERE p.Neighbourhood_Name = c.Neighbourhood_Name AND p.Neighbourhood_Name = r.Neighbourhood_Name\
     AND r.year>= '%d' AND r.year<='%d' GROUP BY r.Neighbourhood_Name ORDER BY ratio DESC limit '%d') group by Neighbourhood_Name ORDER BY ratio DESC;" %((lower_year),(upper_year),(neigh_num)), connection)
     #print(crime)
@@ -129,7 +130,7 @@ def task4(connection,Q4_count):
         fill= True, # whether to fill the map
         fill_color= 'crimson' # color to fill with
         ).add_to(m)   
-    m.save("Q4-" +str(Q4_count) + ".html")     
+    m.save("Q4-" +str(Q4_count) + ".html")
 main()
 
 
