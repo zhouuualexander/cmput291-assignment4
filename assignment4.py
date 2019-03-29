@@ -115,14 +115,11 @@ def task4(connection,Q4_count):
     for item in range(neigh_num):
         ratio.append(crime.iloc[item,4])    
     m = folium.Map(location=[53.5444, -113.323], zoom_start=12)
-    
-    print(name)
     crime_type = []
     for item in name:
         for i in range(neigh_num):
             if crimetype.iloc[i,0] == item:
                 crime_type.append(crimetype.iloc[i,1])
-    print(crime_type)
     for i in range(neigh_num):
         folium.Circle(
         location=location[i], # location
