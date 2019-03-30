@@ -34,64 +34,71 @@ def main():
             valid = False
         else:
             pass
-def task1(connection):
-    pass
+def task1(connection,Q1_count):
+    start = int(input("Enter start year (YYYY):"))
+    end = int(input("Enter end year (YYYY):"))
+    crime = input("Enter crime type:")
+        #sql = "SELECT ISNULL (SELECT Count(c.Incidents_Count) as Count,c.Month FROM crime_incidents c WHERE c.Year >= '%d' AND c.Year <='%d' AND c.Crime_Type == '%s' GROUP BY c.Month),0);" %(start,end,crime)
+    sql = "SELECT Sum(c.Incidents_Count) as Count,c.Month FROM crime_incidents c WHERE c.Year >= '%d' AND c.Year <='%d' AND c.Crime_Type == '%s' GROUP BY c.Month;" %(start,end,crime)
+    data = pd.read_sql_query(sql,connection)
+
+    plot = data.plot.bar(x="Month")
+    plt.plot()
+    #plt.show() #pop out
+    plt.savefig("Q1-"+str(Q1_count)+".png")
 def task2(connection,Q2_count):
     number = int(input("Enter number of locations:"))
     #sql for most populous
     most = pd.read_sql_query("SELECT p.CANADIAN_CITIZEN+p.NON_CANADIAN_CITIZEN+p.NO_RESPONSE, p.Neighbourhood_name,c.Latitude,c.Longitude FROM population p,coordinates c WHERE p.Neighbourhood_name = c.Neighbourhood_name ORDER BY p.Neighbourhood_Number DESC limit '%d' ;" %(number), connection)
-    mostname = []
-    for item in range(number):
-        mostname.append(most.iloc[item,1])
-    mostlocation = []
-    for item in range(number):
-        mostcoord = []
-        for num in range(2,4):
-            mostcoord.append(most.iloc[item,num])
-        mostlocation.append(mostcoord)
-    mostpopul = []
-    for item in range(number):
-        mostpopul.append(most.iloc[item,0])
     #sql for least populous
     least = pd.read_sql_query("SELECT p.CANADIAN_CITIZEN+p.NON_CANADIAN_CITIZEN+p.NO_RESPONSE, p.Neighbourhood_Name,c.Latitude,c.Longitude FROM population p,coordinates c WHERE p.Neighbourhood_Name = c.Neighbourhood_Name ORDER BY p.Neighbourhood_Number ASC limit '%d' ;" %(number), connection)
-    leastname = []
-    for item in range(number):
-        leastname.append(least.iloc[item,1])
-    leastlocation = []
-    for item in range(number):
-        leastcoord = []
-        for num in range(2,4):
-            leastcoord.append(least.iloc[item,num])
-        leastlocation.append(leastcoord)
-    leastpopul = []
-    for item in range(number):
-        leastpopul.append(least.iloc[item,0])
     #initial the map
     m = folium.Map(location=[53.5444, -113.323], zoom_start=12)
     #create most populous
     for i in range(number):
         folium.Circle(
-        location=mostlocation[i], # location
-        popup= mostname[i]+ " <br> " + "Population: " + str(mostpopul[i]), # popup text
-        radius= 100, # size of radius in meter
+        location=[most.iloc[i,2],most.iloc[i,3]], # location
+        popup= most.iloc[i,1] + " <br> " + "Population: " + str(most.iloc[i,0]), # popup text
+        radius= int(most.iloc[i,0])/10, # size of radius in meter
         color= 'crimson', # color of the radius
         fill= True, # whether to fill the map
         fill_color= 'crimson' # color to fill with
-        ).add_to(m) 
-    #create least populous
+        ).add_to(m)
+
     for i in range(number):
         folium.Circle(
-        location=leastlocation[i], # location
-        popup= leastname[i]+ " <br> " + "Population: " + str(leastpopul[i]), # popup text
-        radius= 100, # size of radius in meter
+        location=[least.iloc[i,2],least.iloc[i,3]], # location
+        popup= least.iloc[i,1] + " <br> " + "Population: " + str(least.iloc[i,0]), # popup text
+        radius= int(least.iloc[i,0])/10, # size of radius in meter
         color= 'crimson', # color of the radius
         fill= True, # whether to fill the map
         fill_color= 'crimson' # color to fill with
-        ).add_to(m) 
-        m.save("Q2-" +str(Q2_count) + ".html") 
-        
-def task3(connection):
-    pass
+        ).add_to(m)
+    m.save("Q2_" +str(Q2_count) + ".html")
+
+
+def task3(connection,Q3_count):
+    start = int(input("Enter start year (YYYY):"))
+    end = int(input("Enter end year (YYYY):"))
+    crime = str(input("Enter crime type:"))
+    num = int(input("Enther number of neighborhoods:"))
+    sql = "SELECT ci.Neighbourhood_Name,cd.Latitude,cd.Longitude,SUM(ci.Incidents_Count) as total FROM crime_incidents ci, coordinates cd WHERE ci.Neighbourhood_Name = cd.Neighbourhood_Name \
+    AND ci.Year >= '%d' AND ci.year <='%d' AND ci.crime_type='%s' GROUP BY ci.Neighbourhood_Name ORDER BY total DESC limit '%d'; " %(start,end,crime,num)
+    nb = pd.read_sql_query(sql,connection)
+
+    m = folium.Map(location=[53.5444, -113.323], zoom_start=12)
+    for i in range(num):
+        folium.Circle(
+        location= [nb.iloc[i,1],nb.iloc[i,2]],
+        popup = nb.iloc[i,0] + "<br>" + str(nb.iloc[i,3]),
+        radius = int(nb.iloc[i,3]),
+        color = "crimson",
+        fill= True,
+        fill_color= 'crimson').add_to(m)
+    m.save("Q3_"+str(Q3_count)+".html")
+
+
+
 def task4(connection,Q4_count):
     lower_year = int(input("Enter start year (YYYY):"))
     upper_year = int(input("Enter end year (YYYY):"))
@@ -102,19 +109,19 @@ def task4(connection,Q4_count):
     #print(crime)
     neigh_name = crime['Neighbourhood_Name']
     neigh_name.to_sql("Names",connection,if_exists='replace')
-    crimetype = pd.read_sql_query("SELECT temp.Neighbourhood_Name,temp.Crime_Type,MAX(temp.summer) FROM (SELECT r.Neighbourhood_Name,r.Crime_Type,SUM(r.Incidents_Count) as summer FROM Names n ,crime_incidents r WHERE r.Neighbourhood_Name = n.Neighbourhood_Name and r.year>= '%d' AND r.year<='%d'Group by r.Neighbourhood_Name,r.Crime_Type)temp  Group by temp.Neighbourhood_Name ;" %((lower_year),(upper_year)) , connection) 
+    crimetype = pd.read_sql_query("SELECT temp.Neighbourhood_Name,temp.Crime_Type,MAX(temp.summer) FROM (SELECT r.Neighbourhood_Name,r.Crime_Type,SUM(r.Incidents_Count) as summer FROM Names n ,crime_incidents r WHERE r.Neighbourhood_Name = n.Neighbourhood_Name and r.year>= '%d' AND r.year<='%d'Group by r.Neighbourhood_Name,r.Crime_Type)temp  Group by temp.Neighbourhood_Name ;" %((lower_year),(upper_year)) , connection)
     name = []
     for item in range(neigh_num):
         name.append(crime.iloc[item,0])
     location = []
     for item in range(neigh_num):
         coord = []
-        for num in range(1,3):
+        for num in range    (1,3):
             coord.append(crime.iloc[item,num])
         location.append(coord)
     ratio = []
     for item in range(neigh_num):
-        ratio.append(crime.iloc[item,4])    
+        ratio.append(crime.iloc[item,4])
     m = folium.Map(location=[53.5444, -113.323], zoom_start=12)
     crime_type = []
     for item in name:
@@ -125,14 +132,10 @@ def task4(connection,Q4_count):
         folium.Circle(
         location=location[i], # location
         popup= name[i]+ " <br> " + str(ratio[i]) + " <br> " + crime_type[i], # popup text
-        radius= 100, # size of radius in meter
+        radius= (crime.iloc[i,4])*1000, # size of radius in meter
         color= 'crimson', # color of the radius
         fill= True, # whether to fill the map
         fill_color= 'crimson' # color to fill with
-        ).add_to(m)   
+        ).add_to(m)
     m.save("Q4-" +str(Q4_count) + ".html")
 main()
-
-
-
-
